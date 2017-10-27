@@ -13,8 +13,13 @@ class Test(unittest.TestCase):
         self.assertEqual(Matcher.image("img")(page), "http://url.com/image.jpg")
         self.assertEqual(Matcher("div.text")(page), "This is a sample of bold text")
 
+        self.assertEqual(Matcher.link("a.relative")(page, multiple=True), ['http://matteo-ronchetti.github.io/relative_link', 'http://matteo-ronchetti.github.io/raschietto/pages/relative_link'])
+
+        # self.assertEqual(Matcher.link("a.relative", domain="http://url.com")(page), "http://url.com/relative_link")
+        # self.assertEqual(Matcher.link("a.relative", domain="http://url.com")(page), "http://url.com/relative_link")
+
     def test_local_page_loading(self):
-        page = Raschietto.from_file(os.path.join(CURRENT_PATH, "..", "pages", "1.html"))
+        page = Raschietto.from_file(os.path.join(CURRENT_PATH, "..", "pages", "1.html"), "http://matteo-ronchetti.github.io/raschietto/pages/1.html")
         self._test_page_1(page)
 
     def test_remote_page_loading(self):

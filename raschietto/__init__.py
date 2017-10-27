@@ -8,6 +8,7 @@ import urllib
 import urllib.request
 import lxml.etree
 import lxml.html
+import urllib.parse
 import lxml.html.clean as clean
 from lxml.cssselect import CSSSelector
 
@@ -18,27 +19,27 @@ class Matcher:
         if mapping is not None:
             self.mapping = mapping
         else:
-            self.mapping = lambda x: x.text_content().strip()
+            self.mapping = lambda x, page: x.text_content().strip()
 
         self.condition = condition
 
     @staticmethod
     def image(selector, mapping=None):
         if mapping:
-            return Matcher(selector, mapping=lambda x: mapping(x.get("src")))
-        return Matcher(selector, mapping=lambda x: x.get("src"))
+            return Matcher(selector, mapping=lambda x, page: mapping(x.get("src")))
+        return Matcher(selector, mapping=lambda x, page: x.get("src"))
 
     @staticmethod
     def link(selector, domain=None, startswith=None):
-        def mapping(x):
-            x = x.get("href")
-            if domain is not None and not x.startswith(domain):
-                x = domain + x
-            if startswith and not x.startswith(startswith):
-                x = None
-            return x
+        # def mapping(x):
+        #     x = x.get("href")
+        #     if domain is not None and not x.startswith(domain):
+        #         x = domain + x
+        #     if startswith and not x.startswith(startswith):
+        #         x = None
+        #     return x
 
-        return Matcher(selector, mapping=mapping)
+        return Matcher(selector, mapping=lambda x, page: page.get_absolute_url(x.get("href")))
 
     def __call__(self, page, multiple=False, filter_none=True):
         matches = self.selector(page.tree)
@@ -47,7 +48,7 @@ class Matcher:
             matches = [x for x in matches if self.condition(x)]
 
         if multiple:
-            matches = [self.mapping(x) for x in matches]
+            matches = [self.mapping(x, page) for x in matches]
             if filter_none:
                 matches = [x for x in matches if x is not None]
             return matches
@@ -55,7 +56,7 @@ class Matcher:
             while matches:
                 x = matches.pop()
                 if self.mapping:
-                    x = self.mapping(x)
+                    x = self.mapping(x, page)
                 if x is not None:
                     return x
             return None
@@ -64,19 +65,20 @@ class Matcher:
 class Raschietto:
     user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'
 
-    def __init__(self, html_code):
+    def __init__(self, html_code, url=""):
         self.tree = lxml.html.fromstring(html_code)
+        self.url = url
 
     @staticmethod
     def from_url(url):
         r = requests.get(url, headers={'User-Agent': Raschietto.user_agent})
         r.encoding = "utf-8"
-        return Raschietto(r.text)
+        return Raschietto(r.text, url)
 
     @staticmethod
-    def from_file(file_path):
+    def from_file(file_path, url=""):
         f = open(file_path)
-        return Raschietto(f.read())
+        return Raschietto(f.read(), url)
 
     @staticmethod
     def download_file(url, path):
@@ -112,6 +114,9 @@ class Raschietto:
     #             f.close()
     #             progress(i+1, len(pages))
     #             time.sleep(delay)  # delay to be respectful with the server
+
+    def get_absolute_url(self, url):
+        return urllib.parse.urljoin(self.url, url)
 
     @staticmethod
     def _create_matcher(x):
