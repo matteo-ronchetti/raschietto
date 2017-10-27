@@ -26,20 +26,19 @@ class Matcher:
     @staticmethod
     def image(selector, mapping=None):
         if mapping:
-            return Matcher(selector, mapping=lambda x, page: mapping(x.get("src")))
-        return Matcher(selector, mapping=lambda x, page: x.get("src"))
+            return Matcher(selector, mapping=lambda x, page: mapping(page.get_absolute_url(x.get("src")), page))
+        return Matcher(selector, mapping=lambda x, page: page.get_absolute_url(x.get("src")))
 
     @staticmethod
-    def link(selector, domain=None, startswith=None):
-        # def mapping(x):
-        #     x = x.get("href")
-        #     if domain is not None and not x.startswith(domain):
-        #         x = domain + x
-        #     if startswith and not x.startswith(startswith):
-        #         x = None
-        #     return x
+    def link(selector, startswith=None):
+        def mapping(x, page):
+            x = page.get_absolute_url(x.get("href"))
 
-        return Matcher(selector, mapping=lambda x, page: page.get_absolute_url(x.get("href")))
+            if startswith and not x.startswith(startswith):
+                x = None
+            return x
+
+        return Matcher(selector, mapping=mapping)
 
     def __call__(self, page, multiple=False, filter_none=True):
         matches = self.selector(page.tree)
@@ -129,11 +128,11 @@ class Raschietto:
 
     def match(self, x):
         matcher = self._create_matcher(x)
-        return matcher(self.tree)
+        return matcher(self)
 
     def match_all(self, x):
         matcher = self._create_matcher(x)
-        return matcher(self.tree, multiple=True)
+        return matcher(self, multiple=True)
 
     def extract(self, config):
         res = dict()
