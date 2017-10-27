@@ -85,6 +85,7 @@ class Raschietto:
         resource = urllib.request.urlopen(req)
         with open(path, "wb") as of:
             of.write(resource.read())
+        return path
 
     @staticmethod
     def get_json(url):

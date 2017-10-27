@@ -1,3 +1,5 @@
+import json
+
 from raschietto import Raschietto, Matcher
 import unittest
 import os
@@ -35,6 +37,15 @@ class Test(unittest.TestCase):
     def test_remote_page_loading(self):
         page = Raschietto.from_url("http://matteo-ronchetti.github.io/raschietto/pages/1.html")
         self._test_page_1(page)
+
+    def test_file_and_json_download(self):
+        path = Raschietto.download_file("http://matteo-ronchetti.github.io/raschietto/pages/json/jsonfile.json", "/tmp/tmp.json")
+        with open(path) as f:
+            obj_a = json.load(f)
+
+        obj_b = Raschietto.get_json("http://matteo-ronchetti.github.io/raschietto/pages/json/jsonfile.json")
+
+        self.assertEquals(obj_a, obj_b)
 
 
 
