@@ -7,7 +7,6 @@ import os
 
 CURRENT_PATH = os.path.abspath(os.path.dirname(__file__))
 
-
 class Test(unittest.TestCase):
     def _test_page_1(self, page):
         self.assertEqual(Matcher("a#link")(page), "link text")

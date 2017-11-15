@@ -9,9 +9,8 @@ import urllib.request
 import lxml.etree
 import lxml.html
 import urllib.parse
-import lxml.html.clean as clean
 from lxml.cssselect import CSSSelector
-
+from abc import ABC, abstractmethod
 
 class Matcher:
     def __init__(self, selector, condition=None, mapping=None):
@@ -154,3 +153,32 @@ class Raschietto:
             res["multi-item"] = [dict(zip(tmp, t)) for t in zip(*tmp.values())]
 
         return res
+
+
+class Crawler(ABC):
+    def __init__(self, pages):
+        if isinstance(pages, str):
+            pages = [pages]
+
+        self.pages = pages
+        self.visited_pages = set(self.pages)
+
+    @abstractmethod
+    def parse_page(self, page):
+        pass
+
+    def run(self):
+        while self.pages:
+            url = self.pages.pop()
+            try:
+                page = Raschietto.from_url(url)
+                new_pages = self.parse_page(page)
+
+                for np in new_pages:
+                    if np not in self.visited_pages:
+                        self.visited_pages.add(np)
+                        self.pages.append(np)
+
+            except Exception as e:
+                print("Got error ", e, "while processing page '%s'" % url)
+
