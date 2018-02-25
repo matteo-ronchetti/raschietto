@@ -3,6 +3,11 @@
 __pycache__/
 *.py[cod]
 *$py.class
+arxiv.py
+indeed.py
+sample.py
+tests/
+pages/
 
 # C extensions
 *.so

@@ -1,8 +1,5 @@
 # coding=utf-8
-import time
-import os
 import requests
-import sys
 import json
 import urllib
 import urllib.request
@@ -11,6 +8,7 @@ import lxml.html
 import urllib.parse
 from lxml.cssselect import CSSSelector
 from abc import ABC, abstractmethod
+
 
 class Matcher:
     def __init__(self, selector, condition=None, mapping=None):
@@ -39,8 +37,12 @@ class Matcher:
 
         return Matcher(selector, mapping=mapping)
 
-    def __call__(self, page, multiple=False, filter_none=True):
-        matches = self.selector(page.tree)
+    def __call__(self, item, multiple=False, filter_none=True, page=None):
+        if isinstance(item, lxml.html.HtmlElement):
+            matches = self.selector(item)
+        else:
+            matches = self.selector(item.tree)
+            page = item
 
         if self.condition:
             matches = [x for x in matches if self.condition(x)]
@@ -70,8 +72,8 @@ class Raschietto:
     @staticmethod
     def from_url(url):
         r = requests.get(url, headers={'User-Agent': Raschietto.user_agent})
-        r.encoding = "utf-8"
-        return Raschietto(r.text, url)
+
+        return Raschietto(r.content, url)
 
     @staticmethod
     def from_file(file_path, url=""):
@@ -94,25 +96,9 @@ class Raschietto:
         print(res)
         return json.loads(res)
 
-    # @staticmethod
-    # def get_pages(pages, path, delay=0.3):
-    #     if not os.path.exists(path):
-    #         os.makedirs(path)
-    #
-    #     with open(os.path.join(path, "list"), 'w') as reference_file:
-    #         print("Downloading %d pages to %s" % (len(pages), path))
-    #
-    #         for i in range(len(pages)):
-    #             page = pages[i]
-    #             reference_file.write(page + "\n")
-    #             r = requests.get(page)
-    #             r.encoding = "utf-8"
-    #             f = open(os.path.join(path, str(i)), 'w')
-    #             html = clean.clean_html(r.text)
-    #             f.write(html)
-    #             f.close()
-    #             progress(i+1, len(pages))
-    #             time.sleep(delay)  # delay to be respectful with the server
+    @staticmethod
+    def element_to_text(el):
+        return el.text_content().strip()
 
     def get_absolute_url(self, url):
         return urllib.parse.urljoin(self.url, url)
@@ -181,4 +167,3 @@ class Crawler(ABC):
 
             except Exception as e:
                 print("Got error ", e, "while processing page '%s'" % url)
-
