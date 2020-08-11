@@ -12,4 +12,3 @@ setup(
     keywords=['scraping', 'web'],  # arbitrary keywords
     classifiers=['Programming Language :: Python :: 3'],
 )
-pip install raschietto
